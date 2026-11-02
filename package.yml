@@ -1,0 +1,18 @@
+package: community.lazycat.app.huginn
+name: Huginn
+version: 0.0.0
+description: "Watch the web for you: build agents that monitor pages and act on what changes."
+min_os_version: "1.5.0"
+homepage: https://github.com/huginn/huginn
+author: Huginn contributors
+license: MIT
+permissions:
+  required:
+    - net.internet
+locales:
+  zh:
+    name: Huginn
+    description: "自动化代理人：监控网页和接口的变化，按规则触发动作，像自己雇了一支跑腿队。"
+  en:
+    name: Huginn
+    description: "Watch the web for you: build agents that monitor pages and act on what changes."

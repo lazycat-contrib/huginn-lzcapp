@@ -1,0 +1,56 @@
+application:
+  subdomain: huginn
+  multi_instance: false
+  upstreams:
+    - location: /package-licenses/
+      backend: file:///lzcapp/pkg/content/licenses/
+    - location: /
+      backend: http://huginn:3000/
+
+services:
+  huginn:
+    # upstream: huginn/huginn:v2026.11.01
+    image: docker.1ms.run/huginn/huginn:v2026.11.01
+    environment:
+      # The image ships and starts its own MySQL, so this stays a single
+      # container. It lives on the /var/lib/mysql volume below.
+      - DATABASE_ADAPTER=mysql2
+      - |-
+        MYSQL_ROOT_PASSWORD={{ stable_secret "huginn_db_root" | replace "\r" "" | replace "\n" "" }}
+      # The seeder creates the admin from these on first boot. Without
+      # SEED_PASSWORD it would generate a random one and print it to the log
+      # where nobody reading the UI would find it -- set it explicitly instead.
+      - |-
+        SEED_PASSWORD={{ .U.admin_password }}
+      - |-
+        SEED_EMAIL={{ .U.admin_email }}
+      - |-
+        SEED_USERNAME={{ .U.admin_username }}
+      - TZ=Asia/Shanghai
+    binds:
+      - /lzcapp/var/mysql:/var/lib/mysql
+
+usage: |
+  Huginn 是自动化代理人平台：监控网页和接口的变化，按规则触发动作。
+
+  使用方法：
+  1. 打开应用，用你安装时设置的用户名和密码登录。
+  2. 新建一个 Agent（代理人），选它的类型：
+     - 监控类：定时抓取某个网页或 RSS，检测内容变化
+     - 触发类：收到内容后判断条件，命中就执行下一步
+     - 动作类：发邮件、发 Webhook、写文件、调用接口
+  3. 把多个 Agent 串成一条链（一个的输出接下一个的输入），就成了一条自动化流水线。
+  4. 在"Event"里能看到每次触发和执行的记录。
+
+  数据与安全：
+  - 数据库与配置都在 /lzcapp/var/mysql，卸载应用会一并删除，请定期备份。
+  - 管理员账号密码来自安装参数，密码默认随机生成，不存在内置弱口令。
+  - 数据库 root 密码由平台稳定密钥生成，每个部署不同。
+  - 应用经懒猫入口鉴权访问。
+
+  说明：
+  - 单容器部署，内置 MySQL，无需额外数据库。
+  - 首次启动会建库、跑迁移并创建管理员账号，打开可能需要等一两分钟。
+  - 未配置邮件服务（SMTP），因此"发邮件"类 Agent 需要你自己填 SMTP 才能用；
+    网页监控、Webhook、数据处理等不依赖邮件。
+  - 未做真机验证：登录、建 Agent、触发执行以及重启后持久化均未在设备上实测。
